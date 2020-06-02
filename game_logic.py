@@ -1,6 +1,5 @@
 """Содержит основные методы для игры, обеспечивает игровую логику"""
 
-
 import core_classes
 import time
 from Interface import Interface
@@ -16,12 +15,12 @@ def handle_embedding(balls_on_map, ball, last_ball_in_root, next_ball_in_root):
         n = len(balls_on_map[i])
         if ball == last_ball_in_root[i]:
             balls_on_map[i].insert(0, ball)
-            return
+            return i, 0
         if (len(next_ball_in_root) > i and
                 ball == core_classes.Ball(next_ball_in_root[i][1],
                                           next_ball_in_root[i][0])):
             balls_on_map[i].append(ball)
-            return
+            return i, n
         for j in range(n):
             if ball == balls_on_map[i][j]:
                 balls_on_map[i].insert(max(j + 1, 0), ball)
@@ -30,7 +29,31 @@ def handle_embedding(balls_on_map, ball, last_ball_in_root, next_ball_in_root):
                     balls_on_map[i][t].y = balls_on_map[i][t - 1].y
                 balls_on_map[i][0].x = last_ball_in_root[i].x
                 balls_on_map[i][0].y = last_ball_in_root[i].y
-                return
+                return i, max(j + 1, 0)
+    return None, None
+
+
+def count_scores(balls_on_map, root_index, ball_position):
+    if root_index is None or ball_position is None:
+        return 0
+    line = balls_on_map[root_index]
+    count = 1
+    color = Interface.get_color_pair(line[ball_position])
+    index = ball_position + 1
+    while index < len(line) and color == Interface.get_color_pair(line[index]):
+        count += 1
+        index += 1
+    end_index = index - 1
+    index = ball_position - 1
+    while 0 <= index and color == Interface.get_color_pair(line[index]):
+        count += 1
+        index -= 1
+    start_index = index + 1
+    if count >= 3:
+        line = line[:start_index] + line[end_index + 1:]
+        balls_on_map[root_index] = line
+        return count * 10
+    return 0
 
 
 def process_level(level, score, lives, graphics, index):
@@ -54,9 +77,11 @@ def process_level(level, score, lives, graphics, index):
             graphics.draw_an_object(line[0][0], line[0][1], " ")
             flying_ball.x = line[0][1]
             flying_ball.y = line[0][0]
-            handle_embedding(level.balls_on_map, flying_ball,
-                             last_ball_in_root,
-                             next_ball_in_root_with_speed)
+            score += count_scores(level.balls_on_map, *handle_embedding(
+                level.balls_on_map,
+                flying_ball,
+                last_ball_in_root,
+                next_ball_in_root_with_speed))
             line.pop(0)
             if len(line) > 0:
                 graphics.draw_ball(flying_ball)
@@ -151,7 +176,7 @@ def get_results(file):
 
 def save_results(score, filename, level_time, level_index):
     """Метод сохраняет лучшие 9 результатов для каждого уровня"""
-    file = ''.join([filename, str(level_index), '.json'])
+    file = f'{filename}{level_index}.json'
     results = get_results(file)
     if results:
         current_result = [score, level_time]

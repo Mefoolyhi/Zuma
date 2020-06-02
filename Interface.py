@@ -151,8 +151,8 @@ class Interface:
     def next_ball(self):
         """Обновление цветов после выстрела"""
         curses.init_pair(self.level.frog.shoot_balls[0].color_number,
-                         *curses.pair_content(
-                             self.level.frog.shoot_balls[1].color_number))
+                         *Interface.get_color_pair(
+                             self.level.frog.shoot_balls[1]))
         curses.init_pair(self.level.frog.shoot_balls[1].color_number,
                          random.randint(8, 8 + self.level.color_number), -1)
 
@@ -166,3 +166,7 @@ class Interface:
         """Чистит и стирает основной игровой экран"""
         Interface.clean_screen(self.win)
         self.win = None
+
+    @staticmethod
+    def get_color_pair(ball):
+        return curses.pair_content(ball.color_number)

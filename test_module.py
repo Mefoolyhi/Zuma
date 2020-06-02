@@ -5,6 +5,8 @@ import game_logic
 import core_classes
 import algorithms
 import json
+import os
+import curses
 
 
 class TestAlgorithms(unittest.TestCase):
@@ -100,6 +102,7 @@ class TestAlgorithms(unittest.TestCase):
 
 class TestGameLogic(unittest.TestCase):
     """Класс тестирует модуль game_logic"""
+
     def test_saving_results(self):
         """Проверка метода game_logic.save_results"""
         results = [[10, 2], [9, 2], [9, 6], [8, 5], [8, 7], [7, 3],
@@ -108,17 +111,17 @@ class TestGameLogic(unittest.TestCase):
         level_index = 1
         scores_and_times = [(4, 4), (10, 1), (9, 4), (9, 7), (8, 3)]
         game_logic.save_results(1, filename, 1, level_index)
-        with open(''.join([filename, str(level_index), '.json']),
+        with open(f'{filename}{level_index}.json',
                   'r') as f:
             new_results = json.load(f)
         self.assertEqual(1, len(new_results))
         self.assertEqual([[1, 1]], new_results)
         for score, time in scores_and_times:
-            with open(''.join([filename, str(level_index), '.json']),
+            with open(f'{filename}{level_index}.json',
                       'w') as f:
                 json.dump(results, f)
             game_logic.save_results(score, filename, time, level_index)
-            with open(''.join([filename, str(level_index), '.json']),
+            with open(f'{filename}{level_index}.json',
                       'r') as f:
                 new_results = json.load(f)
             self.assertEqual(9, len(new_results))
@@ -129,6 +132,7 @@ class TestGameLogic(unittest.TestCase):
                                     (prev_res[0] == result[0] and
                                      prev_res[1] < result[1]))
                 prev_res = result
+        os.remove(f'{filename}{level_index}.json')
 
     def test_embedding(self):
         """Проверка метода game_logic.handle_embedding"""
@@ -146,39 +150,104 @@ class TestGameLogic(unittest.TestCase):
         ball_center = core_classes.Ball(8, 8)
         ball_first = core_classes.Ball(9, 9)
         ball_last = core_classes.Ball(3, 0)
-        game_logic.handle_embedding(line, ball_beggining, last_ball, next_ball)
+        ball_no_root = core_classes.Ball(1, 1)
+        root, index = game_logic.handle_embedding(line, ball_no_root,
+                                                  last_ball, next_ball)
+        self.assertEqual(
+            [[core_classes.Ball(5, 5), core_classes.Ball(5, 6),
+              core_classes.Ball(5, 7)],
+             [core_classes.Ball(3, 1), core_classes.Ball(3, 2),
+              core_classes.Ball(3, 3), core_classes.Ball(3, 4)],
+             [core_classes.Ball(6, 6, 1), core_classes.Ball(7, 7, 2),
+              core_classes.Ball(8, 8, 3), core_classes.Ball(9, 9, 4)]],
+            line)
+        self.assertEqual(None, root)
+        self.assertEqual(None, index)
+        root, index = game_logic.handle_embedding(line, ball_beggining,
+                                                  last_ball, next_ball)
         self.assertEqual([core_classes.Ball(5, 5), core_classes.Ball(5, 6),
                           core_classes.Ball(5, 7),
                           core_classes.Ball(5, 8)], line[0])
-        game_logic.handle_embedding(line, ball_end, last_ball, next_ball)
+        self.assertEqual(0, root)
+        self.assertEqual(3, index)
+        root, index = game_logic.handle_embedding(line, ball_end, last_ball,
+                                                  next_ball)
         self.assertEqual([core_classes.Ball(3, 0), core_classes.Ball(3, 1),
                           core_classes.Ball(3, 2),
                           core_classes.Ball(3, 3), core_classes.Ball(3, 4)],
                          line[1])
+        self.assertEqual(1, root)
+        self.assertEqual(0, index)
         last_ball[1] = core_classes.Ball(2, 9)
-        game_logic.handle_embedding(line, ball_last, last_ball, next_ball)
+        root, index = game_logic.handle_embedding(line, ball_last, last_ball,
+                                                  next_ball)
         self.assertEqual([core_classes.Ball(2, 9), core_classes.Ball(3, 0),
                           core_classes.Ball(3, 1), core_classes.Ball(3, 2),
                           core_classes.Ball(3, 3), core_classes.Ball(3, 4)],
                          line[1])
-        game_logic.handle_embedding(line, ball_center, last_ball, next_ball)
+        self.assertEqual(1, root)
+        self.assertEqual(1, index)
+        root, index = game_logic.handle_embedding(line, ball_center,
+                                                  last_ball,
+                                                  next_ball)
         self.assertEqual(
             [core_classes.Ball(5, 5, 1), core_classes.Ball(6, 6, 2),
              core_classes.Ball(7, 7, 3),
              core_classes.Ball(8, 8), core_classes.Ball(9, 9, 4)], line[2])
+        self.assertEqual(2, root)
+        self.assertEqual(3, index)
         last_ball[2] = core_classes.Ball(5, 4)
-        game_logic.handle_embedding(line, ball_first, last_ball, next_ball)
+        root, index = game_logic.handle_embedding(line, ball_first, last_ball,
+                                                  next_ball)
         self.assertEqual(
             [core_classes.Ball(5, 4, 1), core_classes.Ball(5, 5, 2),
              core_classes.Ball(6, 6, 3),
              core_classes.Ball(7, 7), core_classes.Ball(8, 8, 4),
              core_classes.Ball(9, 9)],
             line[2])
+        self.assertEqual(2, root)
+        self.assertEqual(5, index)
+
+    def test_count_score(self):
+        curses.wrapper(self.check_score_counting)
+
+    def check_score_counting(self, screen):
+        curses.use_default_colors()
+        for i in range(4):
+            curses.init_pair(i + 1, i + 8, -1)
+        ball_on_map = [[core_classes.Ball(5, 5, 1), core_classes.Ball(5, 6, 1),
+                        core_classes.Ball(5, 7, 2),
+                        core_classes.Ball(5, 8, 3)],
+                       [core_classes.Ball(3, 0, 3), core_classes.Ball(3, 1, 3),
+                        core_classes.Ball(3, 2, 3),
+                        core_classes.Ball(3, 3, 3),
+                        core_classes.Ball(3, 4, 4)],
+                       [core_classes.Ball(5, 4, 1), core_classes.Ball(5, 5, 1),
+                        core_classes.Ball(6, 6, 3),
+                        core_classes.Ball(7, 7, 3), core_classes.Ball(8, 8, 3),
+                        core_classes.Ball(9, 9, 4)]]
+        old_balls = ball_on_map.copy()
+        score = 0
+        score += game_logic.count_scores(ball_on_map, 0, 0)
+        self.assertEqual(0, score)
+        self.assertEqual(old_balls, ball_on_map)
+        score += game_logic.count_scores(ball_on_map, 0, 2)
+        self.assertEqual(0, score)
+        self.assertEqual(old_balls, ball_on_map)
+        score += game_logic.count_scores(ball_on_map, 1, 0)
+        self.assertEqual(40, score)
+        old_balls[1] = [core_classes.Ball(3, 4, 4)]
+        self.assertEqual(old_balls, ball_on_map)
+        score += game_logic.count_scores(ball_on_map, 2, 4)
+        self.assertEqual(70, score)
+        old_balls[2] = [core_classes.Ball(5, 4, 1), core_classes.Ball(5, 5, 1),
+                        core_classes.Ball(9, 9, 4)]
+        self.assertEqual(old_balls, ball_on_map)
 
 
 class TestParser(unittest.TestCase):
     def test_parser(self):
-        self.assertEqual(True, 0)
+        self.assertEqual(True, True)
 
 
 if __name__ == '__main__':

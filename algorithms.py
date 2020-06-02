@@ -93,11 +93,12 @@ def get_vector_to_the_end(height, width, x0, y0, x1, y1):
         if y_max_x != 0:
             error /= y_max_x
         y_max_x = round(y_max_x)
-        return algo_for_drawing_lines(x0, y0, x1, y1)[:-1] + algo_for_drawing_lines(x1, y1, max_x, y_max_x), 2 * error
+        return (algo_for_drawing_lines(x0, y0, x1, y1)[:-1] +
+                algo_for_drawing_lines(x1, y1, max_x, y_max_x), 2 * error)
     else:
         error = abs(x_max_y - round(x_max_y))
         if x_max_y != 0:
             error /= x_max_y
         x_max_y = round(x_max_y)
-        return algo_for_drawing_lines(x0, y0, x1, y1)[:-1] + algo_for_drawing_lines(x1, y1, x_max_y, max_y), 2 * error
-
+        return (algo_for_drawing_lines(x0, y0, x1, y1)[:-1] +
+                algo_for_drawing_lines(x1, y1, x_max_y, max_y), 2 * error)

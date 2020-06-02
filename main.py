@@ -22,8 +22,8 @@ def main(screen):
                 Interface.clean_screen(screen)
                 index_begin = 0
                 for j in range(levels_count):
-                    current_results = game_logic.get_results(''.join([
-                        scores_files, str(j + 1), '.json']))
+                    current_results = game_logic.get_results(
+                        f'{scores_files}{j + 1}.json')
                     if current_results:
                         Interface.draw_high_score_table_level(screen,
                                                               current_results,

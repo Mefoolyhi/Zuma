@@ -14,18 +14,22 @@ class Level:
         # max - 8, дальше цвета странные какие-то
         self.color_number = color_number
         self.roots = roots
-        self.iters = [iter(root) for root in roots]
         self.balls_number = balls_number
         self.field_height = field_height
         self.field_width = field_width
-        self.balls_in_root = self.balls_number // len(self.enters)
-        self.balls_on_map = []
-        self.frog = Frog(*frog_right_up_corner, balls_number + 1)
         self.percentage = percentage
+        self.balls_on_map = []
         self.speed = speed
-        for i in range(len(self.enters)):
-            self.balls_on_map.append([Ball(self.enters[i][1], self.enters[i][
-                0], i * self.balls_in_root)])
+        try:
+            self.iters = [iter(root) for root in roots]
+            self.balls_in_root = self.balls_number // len(self.enters)
+            self.frog = Frog(*frog_right_up_corner, balls_number + 1)
+            for i in range(len(self.enters)):
+                self.balls_on_map.append([Ball(self.enters[i][1], self.enters[i][
+                    0], i * self.balls_in_root)])
+        except BaseException as e:
+            print("Invalid Level")
+            raise e
 
 
 class Ball:
@@ -40,6 +44,9 @@ class Ball:
 
     def __hash__(self):
         return self.x * 2971215073 + self.y * 28657 + self.color_number
+
+    def __str__(self):
+        return f"x={self.x}, y={self.y}, color number {self.color_number}"
 
 
 class Frog:
