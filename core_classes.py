@@ -1,14 +1,21 @@
 """Содержит основные классы для работы"""
 
-
 import algorithms
 
 
 class Level:
     """Класс уровня"""
-    def __init__(self, frog_right_up_corner, enters, exits, color_number,
-                 roots, balls_number, field_height,
-                 field_width, percentage, speed):
+
+    def __init__(self, frog_right_up_corner=(0, 0), enters=None, exits=None,
+                 color_number=0,
+                 roots=None, balls_number=0, field_height=0,
+                 field_width=0, percentage=0, speed=0):
+        if roots is None:
+            roots = []
+        if exits is None:
+            exits = []
+        if enters is None:
+            enters = []
         self.enters = enters
         self.exits = exits
         # max - 8, дальше цвета странные какие-то
@@ -18,22 +25,69 @@ class Level:
         self.field_height = field_height
         self.field_width = field_width
         self.percentage = percentage
-        self.balls_on_map = []
+        self.frog_right_up_corner = frog_right_up_corner
         self.speed = speed
+        self._frog = None
+        self._balls_on_map = []
+        self._iters = []
+        self._balls_in_root = 0
+
+    def end_creating_level(self):
         try:
-            self.iters = [iter(root) for root in roots]
-            self.balls_in_root = self.balls_number // len(self.enters)
-            self.frog = Frog(*frog_right_up_corner, balls_number + 1)
+            self._iters = [iter(root) for root in self.roots]
+            self._balls_in_root = self.balls_number // len(self.enters)
+            if len(self.frog_right_up_corner) != 2:
+                raise ValueError("Ошибка в задании лягушки")
+            self._frog = Frog(*self.frog_right_up_corner,
+                              self.balls_number + 1)
+            if len(self.enters) != len(self.exits) != len(self.roots):
+                raise ValueError("Количество входов, выходов и путей не"
+                                 "совпадает")
             for i in range(len(self.enters)):
-                self.balls_on_map.append([Ball(self.enters[i][1], self.enters[i][
-                    0], i * self.balls_in_root)])
+                if len(self.enters[i]) != 2 or len(self.exits[i]) != 2:
+                    raise ValueError("Ошибка в координатах входов и выходов")
+                self._balls_on_map.append([Ball(self.enters[i][1],
+                                                self.enters[i][0],
+                                                i * self._balls_in_root)])
+                for j in range(len(self.roots[i])):
+                    if len(self.roots[i][j]) != 3:
+                        raise ValueError("Ошибка в задании путей")
         except BaseException as e:
             print("Invalid Level")
             raise e
 
+    def __eq__(self, other):
+        if (len(self.exits) != len(other.exits) !=
+                len(self.enters) != len(other.enters) !=
+                len(self.roots) != len(other.roots)):
+            return False
+        for i in range(len(self.enters)):
+            if (self.enters[i][0] != other.enters[i][0] or
+                    self.enters[i][1] != other.enters[i][1]):
+                return False
+            if (self.exits[i][0] != other.exits[i][0] or
+                    self.exits[i][1] != other.exits[i][1]):
+                return False
+            for j in range(len(self.roots[i])):
+                if (self.roots[i][j][0] != other.roots[i][j][0] or
+                        self.roots[i][j][1] != other.roots[i][j][1] or
+                        self.roots[i][j][2] != other.roots[i][j][2]):
+                    return False
+        if (self.frog_right_up_corner[0] != other.frog_right_up_corner[0] or
+            self.frog_right_up_corner[1] != other.frog_right_up_corner[1] or
+                self.color_number != other.color_number or
+                self.speed != other.speed or
+                abs(self.percentage - other.percentage) > 1e-3 or
+                self.field_width != other.field_width or
+                self.field_height != other.field_height or
+                self.balls_number != other.balls_number):
+            return False
+        return True
+
 
 class Ball:
     """Класс шара"""
+
     def __init__(self, x, y, color_number=0):
         self.x = x
         self.y = y
@@ -51,11 +105,15 @@ class Ball:
 
 class Frog:
     """Класс стреляющей лягушки"""
+
     def __init__(self, x, y, color_number):
         self.right_up_corner = (x, y)
         self.shooting_point = Ball(x + 1, y, color_number)
         self.shoot_balls = [self.shooting_point, Ball(x + 1, y + 1,
                                                       color_number + 1)]
+
+    def __str__(self):
+        return f"({self.right_up_corner[0]}, {self.right_up_corner[1]})"
 
     def shoot(self, x, y, field):
         """

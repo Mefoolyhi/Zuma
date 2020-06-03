@@ -1,42 +1,30 @@
 import core_classes
+import os.path
+import json
 
 
 def get_level(index):
-    levels = [None, None]
-    levels[0] = core_classes.Level((18, 10), [(10, 1)], [(10, 38)], 5,
-                                   [[(9, 1, 5), (8, 1, 5), (7, 1, 5),
-                                     (6, 1, 5), (5, 1, 5), (5, 2, 5),
-                                     (5, 3, 5), (5, 4, 5), (5, 5, 5),
-                                     (5, 6, 7), (5, 7, 7), (5, 8, 7),
-                                     (5, 9, 7), (5, 10, 7), (5, 11, 7),
-                                     (5, 12, 7), (5, 13, 7), (5, 14, 7),
-                                     (5, 15, 5), (5, 16, 5), (5, 17, 5),
-                                     (5, 18, 5), (5, 19, 5), (5, 20, 5),
-                                     (5, 21, 7), (5, 22, 7), (5, 23, 7),
-                                     (5, 24, 7), (5, 25, 7), (5, 26, 7),
-                                     (5, 27, 7), (5, 28, 7), (5, 29, 7),
-                                     (5, 30, 10), (5, 31, 10), (5, 32, 10),
-                                     (5, 33, 10), (5, 34, 10), (5, 35, 10),
-                                     (5, 36, 10), (5, 37, 10), (5, 38, 10),
-                                     (6, 38, 10), (7, 38, 10), (8, 38, 10),
-                                     (9, 38, 10)]],
-                                   5, 12, 40, 33.3, 100)
-    levels[1] = core_classes.Level((18, 10), [(10, 1)], [(10, 38)], 3,
-                                   [[(9, 1, 5), (8, 1, 5), (7, 1, 5),
-                                     (6, 1, 5), (5, 1, 5), (5, 2, 5),
-                                     (5, 3, 5), (5, 4, 5), (5, 5, 5),
-                                     (5, 6, 7), (5, 7, 7), (5, 8, 7),
-                                     (5, 9, 7), (5, 10, 7), (5, 11, 7),
-                                     (5, 12, 7), (5, 13, 7), (5, 14, 7),
-                                     (5, 15, 5), (5, 16, 5), (5, 17, 5),
-                                     (5, 18, 5), (5, 19, 5), (5, 20, 5),
-                                     (5, 21, 7), (5, 22, 7), (5, 23, 7),
-                                     (5, 24, 7), (5, 25, 7), (5, 26, 7),
-                                     (5, 27, 7), (5, 28, 7), (5, 29, 7),
-                                     (5, 30, 5), (5, 31, 5), (5, 32, 5),
-                                     (5, 33, 5), (5, 34, 5), (5, 35, 5),
-                                     (5, 36, 5), (5, 37, 5), (5, 38, 5),
-                                     (6, 38, 5), (7, 38, 5), (8, 38, 5),
-                                     (9, 38, 5)]],
-                                   10, 12, 40, 25, 150)
-    return levels[index - 1]
+    filename = f"{index}level.txt"
+    if not os.path.isfile(filename):
+        raise RuntimeError("Level do not exist")
+    with open(filename, 'r') as f:
+        data = f.readlines()
+    level = core_classes.Level()
+    for line in data:
+        attr, str_value = line.split(":")
+        attr = attr[1:-1]
+        str_value = str_value[1:-2]
+        value = json.loads(str_value)
+        setattr(level, attr, value)
+    level.end_creating_level()
+    return level
+
+
+def put_level(index, level):
+    filename = f"{index}level.txt"
+    if os.path.isfile(filename):
+        os.remove(filename)
+    with open(filename, "a") as f:
+        for attr in level.__dict__.keys():
+            if not attr.startswith('_'):
+                f.write(f'"{attr}": {json.dumps(getattr(level, attr))},\n')

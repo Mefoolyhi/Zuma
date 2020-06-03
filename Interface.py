@@ -129,38 +129,38 @@ class Interface:
 
     def draw_a_frog(self):
         """ Метод отрисовывает лягушку и шары для стрельбы"""
-        x = self.level.frog.right_up_corner[0]
-        y = self.level.frog.right_up_corner[1]
+        x = self.level._frog.right_up_corner[0]
+        y = self.level._frog.right_up_corner[1]
         self.draw_an_object(y, x, '/')
         self.draw_an_object(y, x + 2, '\\')
         self.draw_an_object(y + 1, x, '\\')
         self.draw_an_object(y + 1, x + 2, '/')
-        self.draw_ball(self.level.frog.shoot_balls[0])
-        self.draw_ball(self.level.frog.shoot_balls[1])
+        self.draw_ball(self.level._frog.shoot_balls[0])
+        self.draw_ball(self.level._frog.shoot_balls[1])
 
     def update_win(self):
         """Обновление игрового окна, обработка нажатия"""
         key = self.win.getch()
         if key == curses.KEY_MOUSE:
             _, x, y, _, _ = curses.getmouse()
-            line = self.level.frog.shoot(x, y, (self.level.field_height,
-                                                self.level.field_width))[:-1]
+            line = self.level._frog.shoot(x, y, (self.level.field_height,
+                                                 self.level.field_width))[:-1]
             self.next_ball()
             return line
 
     def next_ball(self):
         """Обновление цветов после выстрела"""
-        curses.init_pair(self.level.frog.shoot_balls[0].color_number,
+        curses.init_pair(self.level._frog.shoot_balls[0].color_number,
                          *Interface.get_color_pair(
-                             self.level.frog.shoot_balls[1]))
-        curses.init_pair(self.level.frog.shoot_balls[1].color_number,
+                             self.level._frog.shoot_balls[1]))
+        curses.init_pair(self.level._frog.shoot_balls[1].color_number,
                          random.randint(8, 8 + self.level.color_number), -1)
 
     def set_flying_ball_color(self, flying_ball):
         """Обновление цвета летающего шара"""
         curses.init_pair(flying_ball.color_number,
                          *curses.pair_content(
-                             self.level.frog.shoot_balls[0].color_number))
+                             self.level._frog.shoot_balls[0].color_number))
 
     def end_win(self):
         """Чистит и стирает основной игровой экран"""

@@ -60,8 +60,8 @@ def process_level(level, score, lives, graphics, index):
     """Метод воспороизводит уровень"""
     ticker = 0
     begin = time.perf_counter()
-    flying_ball = core_classes.Ball(level.frog.shooting_point.x,
-                                    level.frog.shooting_point.y,
+    flying_ball = core_classes.Ball(level._frog.shooting_point.x,
+                                    level._frog.shooting_point.y,
                                     level.balls_number + 3)
     last_ball_in_root = []
     next_ball_in_root_with_speed = []
@@ -77,8 +77,8 @@ def process_level(level, score, lives, graphics, index):
             graphics.draw_an_object(line[0][0], line[0][1], " ")
             flying_ball.x = line[0][1]
             flying_ball.y = line[0][0]
-            score += count_scores(level.balls_on_map, *handle_embedding(
-                level.balls_on_map,
+            score += count_scores(level._balls_on_map, *handle_embedding(
+                level._balls_on_map,
                 flying_ball,
                 last_ball_in_root,
                 next_ball_in_root_with_speed))
@@ -87,46 +87,46 @@ def process_level(level, score, lives, graphics, index):
                 graphics.draw_ball(flying_ball)
             else:
                 graphics.set_flying_ball_color(flying_ball)
-                flying_ball = core_classes.Ball(level.frog.shooting_point.x,
-                                                level.frog.shooting_point.y,
+                flying_ball = core_classes.Ball(level._frog.shooting_point.x,
+                                                level._frog.shooting_point.y,
                                                 level.balls_number + 3)
         if ticker % (level.speed * speed_segment) == 0:
             is_dying = False
             graphics.draw_roots()
-            for i in range(len(level.balls_on_map)):
-                n = len(level.balls_on_map[i])
+            for i in range(len(level._balls_on_map)):
+                n = len(level._balls_on_map[i])
                 if n == 0:
                     break
-                graphics.draw_an_object(level.balls_on_map[i][-1].y,
-                                        level.balls_on_map[i][-1].x, "-")
+                graphics.draw_an_object(level._balls_on_map[i][-1].y,
+                                        level._balls_on_map[i][-1].x, "-")
                 last_ball_in_root.append(
-                    core_classes.Ball(level.balls_on_map[i][-1].x,
-                                      level.balls_on_map[i][-1].y))
+                    core_classes.Ball(level._balls_on_map[i][-1].x,
+                                      level._balls_on_map[i][-1].y))
                 for j in range(1, n):
-                    level.balls_on_map[i][-j].x = level.balls_on_map[i][
+                    level._balls_on_map[i][-j].x = level._balls_on_map[i][
                         -j - 1].x
-                    level.balls_on_map[i][-j].y = level.balls_on_map[i][
+                    level._balls_on_map[i][-j].y = level._balls_on_map[i][
                         -j - 1].y
-                    graphics.draw_ball(level.balls_on_map[i][-j])
+                    graphics.draw_ball(level._balls_on_map[i][-j])
 
                 if len(next_ball_in_root_with_speed) > i:
                     next_position = next_ball_in_root_with_speed[i]
-                    next_ball_in_root_with_speed[i] = next(level.iters[i],
+                    next_ball_in_root_with_speed[i] = next(level._iters[i],
                                                            None)
                 else:
                     next_position = (*level.enters[i],
                                      10)
-                    next_ball_in_root_with_speed.append(next(level.iters[i],
+                    next_ball_in_root_with_speed.append(next(level._iters[i],
                                                              None))
                 if next_position:
-                    level.balls_on_map[i][0].x = next_position[1]
-                    level.balls_on_map[i][0].y = next_position[0]
-                    graphics.draw_ball(level.balls_on_map[i][0])
+                    level._balls_on_map[i][0].x = next_position[1]
+                    level._balls_on_map[i][0].y = next_position[0]
+                    graphics.draw_ball(level._balls_on_map[i][0])
                     speed_segment = next_position[2]
                 else:
                     lives -= level.percentage / 100
                     dead_balls_count[i] += 1
-                    level.balls_on_map[i].pop(0)
+                    level._balls_on_map[i].pop(0)
                     if lives < 1e-5:
                         is_dying = True
                         break
@@ -135,13 +135,13 @@ def process_level(level, score, lives, graphics, index):
                                                 f'Score: {score}, '
                                                 f'Lives: {round(lives)}, '
                                                 f'Level: {index}')
-                if n + dead_balls_count[i] < level.balls_in_root:
-                    level.balls_on_map[i].append(
+                if n + dead_balls_count[i] < level._balls_in_root:
+                    level._balls_on_map[i].append(
                         core_classes.Ball(level.enters[i][1],
                                           level.enters[i][0],
-                                          level.balls_in_root * i + n))
+                                          level._balls_in_root * i + n))
 
-            if is_dying or sum(map(len, level.balls_on_map)) == 0:
+            if is_dying or sum(map(len, level._balls_on_map)) == 0:
                 end = time.perf_counter()
                 break
     graphics.end_win()
