@@ -4,9 +4,10 @@ import random
 
 class Interface:
     """Класс отвечает за всю визуализацию в игре"""
-    def __init__(self, level):
+    def __init__(self, level, screen):
         self.level = level
-        self.win = self.init_win()
+        self.win = screen
+        self.init_win()
         self.initialize_colours()
 
     @staticmethod
@@ -46,51 +47,45 @@ class Interface:
             screen.addstr(y_begin + i + 3, 1, f"{str(i + 1).rjust(5)} "
                                               f"{str(results[i][0]).rjust(5)} "
                                               f"{'%.2f' % results[i][1]}")
-        screen.addstr(y_begin + len(results) + 5, 1, 'Click to exit to menu')
+        screen.addstr(y_begin + len(results) + 5, 1, 'Press any key or click '
+                                                     'to exit to menu')
         screen.refresh()
-        key = screen.getch()
-        if key == curses.KEY_MOUSE:
-            Interface.clean_screen(screen)
-            return
 
-    @staticmethod
-    def print_results(screen, score, time):
+    def print_results(self, score, time):
         """Отображение текуших результатов завершенного уровня"""
-        screen.addstr(0, 0, "Level End")
-        screen.addstr(2, 0, f'Score: {score}')
-        screen.addstr(3, 0, f'Time: {time:0.2f} seconds')
-        screen.addstr(5, 0, "Click to continue")
-        screen.refresh()
-        key = screen.getch()
-        if key == curses.KEY_MOUSE:
-            Interface.clean_screen(screen)
-            return
+        self.win.addstr(0, 0, "Level End")
+        self.win.addstr(2, 0, f'Score: {score}')
+        self.win.addstr(3, 0, f'Time: {time:0.2f} seconds')
+        self.win.addstr(5, 0, "Click or press any key to continue")
+        self.win.refresh()
+        Interface.wait_for_reaction(self.win)
 
     @staticmethod
-    def game_over(screen):
-        """Обработка конца игры"""
-        screen.addstr(0, 0, 'Sorry, Game Over')
-        screen.refresh()
+    def wait_for_reaction(screen):
         key = screen.getch()
-        if key == curses.KEY_MOUSE:
-            Interface.clean_screen(screen)
-            return
+        while key < 0:
+            key = screen.getch()
+        Interface.clean_screen(screen)
+
+    def game_over(self):
+        """Обработка конца игры"""
+        self.win.addstr(0, 0, 'Sorry, Game Over')
+        self.win.addstr(2, 0, 'Press any key or click to exit')
+        self.win.refresh()
+        Interface.wait_for_reaction(self.win)
 
     def wait(self, time_in_millisec):
         self.win.timeout(time_in_millisec)
 
     def init_win(self):
         """Инициализация нового окна"""
-        win = curses.newwin(self.level.field_height,
-                            self.level.field_width, 0, 0)
-        win.border(0)
-        win.nodelay(1)
-        win.timeout(100)
-        return win
+        self.win.nodelay(1)
+        self.win.timeout(100)
 
     def draw_consist_items(self, score, lives, level_index):
         """Отображение основных элементов: текущий счет, входы и выходы,
         лягушка"""
+        self.draw_border()
         self.draw_an_object(0, 3, f'Score: {score}, Lives: {round(lives)},'
                                   f' Level: {level_index}')
         for ex in self.level.exits:
@@ -98,6 +93,15 @@ class Interface:
         for ent in self.level.enters:
             self.draw_an_object(ent[0], ent[1], '$')
         self.draw_a_frog()
+
+    def draw_border(self):
+        for i in range(self.level.field_height - 1):
+            self.draw_an_object(i, 0, '|')
+            self.draw_an_object(i, self.level.field_width - 1, '|')
+        for i in range(self.level.field_width):
+            self.draw_an_object(0, i, '_')
+            if 0 < i < self.level.field_width - 1:
+                self.draw_an_object(self.level.field_height - 2, i, '_')
 
     def draw_roots(self):
         """Отображение марщрутов, по которым едут шары"""
@@ -114,18 +118,9 @@ class Interface:
 
     def initialize_colours(self):
         """Инициализация всех цветов, используемых в игре"""
-        for i in range(self.level.balls_number):
-            curses.init_pair(i + 1,
-                             random.randint(8, 8 + self.level.color_number),
-                             -1)
-            # шары с 1 по их количество
-        curses.init_pair(self.level.balls_number + 1,
-                         random.randint(8, 8 + self.level.color_number), -1)
-        curses.init_pair(self.level.balls_number + 2,
-                         random.randint(8, 8 + self.level.color_number), -1)
-        # летящий шар
-        curses.init_pair(self.level.balls_number + 3,
-                         *curses.pair_content(self.level.balls_number + 1))
+        for i in range(self.level.color_number):
+            curses.init_pair(i + 1, 8 + i, -1)
+            # для каждого цвета - своя пара
 
     def draw_a_frog(self):
         """ Метод отрисовывает лягушку и шары для стрельбы"""
@@ -150,23 +145,15 @@ class Interface:
 
     def next_ball(self):
         """Обновление цветов после выстрела"""
-        curses.init_pair(self.level._frog.shoot_balls[0].color_number,
-                         *Interface.get_color_pair(
-                             self.level._frog.shoot_balls[1]))
-        curses.init_pair(self.level._frog.shoot_balls[1].color_number,
-                         random.randint(8, 8 + self.level.color_number), -1)
-
-    def set_flying_ball_color(self, flying_ball):
-        """Обновление цвета летающего шара"""
-        curses.init_pair(flying_ball.color_number,
-                         *curses.pair_content(
-                             self.level._frog.shoot_balls[0].color_number))
+        color = random.randint(1, self.level.color_number)
+        self.level._frog.shoot_balls[0].color_number = \
+            self.level._frog.shoot_balls[1].color_number
+        self.level._frog.shoot_balls[1].color_number = color
 
     def end_win(self):
         """Чистит и стирает основной игровой экран"""
         Interface.clean_screen(self.win)
-        self.win = None
 
-    @staticmethod
-    def get_color_pair(ball):
-        return curses.pair_content(ball.color_number)
+    def draw_balls_in_root(self, index):
+        for ball in self.level._balls_on_map[index]:
+            self.draw_ball(ball)

@@ -29,17 +29,19 @@ def main(screen):
                                                               current_results,
                                                               j + 1,
                                                               index_begin)
-                        index_begin += len(current_results) + 5
+                        index_begin += len(current_results) + 6
+                Interface.wait_for_reaction(screen)
                 continue
             level = pair[1]
-            graphics = Interface(level)
+            Interface.clean_screen(screen)
+            graphics = Interface(level, screen)
             score, lives, time = game_logic.process_level(level, score, lives,
                                                           graphics, i)
-            Interface.print_results(screen, score, time)
+            graphics.print_results(score, time)
             game_logic.save_results(score, scores_files, time, i)
             lives = math.floor(lives)
             if lives == 0:
-                Interface.game_over(screen)
+                graphics.game_over()
                 break
 
 

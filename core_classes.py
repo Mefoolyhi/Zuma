@@ -1,6 +1,7 @@
 """Содержит основные классы для работы"""
 
 import algorithms
+from random import randint
 
 
 class Level:
@@ -39,16 +40,17 @@ class Level:
             if len(self.frog_right_up_corner) != 2:
                 raise ValueError("Ошибка в задании лягушки")
             self._frog = Frog(*self.frog_right_up_corner,
-                              self.balls_number + 1)
+                              self.color_number)
             if len(self.enters) != len(self.exits) != len(self.roots):
                 raise ValueError("Количество входов, выходов и путей не"
                                  "совпадает")
             for i in range(len(self.enters)):
                 if len(self.enters[i]) != 2 or len(self.exits[i]) != 2:
                     raise ValueError("Ошибка в координатах входов и выходов")
+                color = randint(1, self.color_number)
                 self._balls_on_map.append([Ball(self.enters[i][1],
                                                 self.enters[i][0],
-                                                i * self._balls_in_root)])
+                                                color)])
                 for j in range(len(self.roots[i])):
                     if len(self.roots[i][j]) != 3:
                         raise ValueError("Ошибка в задании путей")
@@ -102,15 +104,19 @@ class Ball:
     def __str__(self):
         return f"x={self.x}, y={self.y}, color number {self.color_number}"
 
+    def __copy__(self):
+        return Ball(self.x, self.y, self.color_number)
+
 
 class Frog:
     """Класс стреляющей лягушки"""
 
     def __init__(self, x, y, color_number):
         self.right_up_corner = (x, y)
-        self.shooting_point = Ball(x + 1, y, color_number)
+        self.shooting_point = Ball(x + 1, y, randint(1, color_number))
         self.shoot_balls = [self.shooting_point, Ball(x + 1, y + 1,
-                                                      color_number + 1)]
+                                                      randint(1,
+                                                              color_number))]
 
     def __str__(self):
         return f"({self.right_up_corner[0]}, {self.right_up_corner[1]})"
@@ -133,5 +139,5 @@ class Frog:
         return algorithms.get_vector_to_the_end(width=field[1],
                                                 height=field[0],
                                                 x1=x, y1=y,
-                                                x0=self.right_up_corner[0],
-                                                y0=self.right_up_corner[1] + 1)
+                                                x0=self.shooting_point.x,
+                                                y0=self.shooting_point.y)
