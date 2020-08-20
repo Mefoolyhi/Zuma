@@ -4,6 +4,7 @@ import random
 
 class Interface:
     """Класс отвечает за всю визуализацию в игре"""
+
     def __init__(self, level, screen):
         self.level = level
         self.win = screen
@@ -44,9 +45,10 @@ class Interface:
         screen.addstr(y_begin, 1, f"High Score Table Level {index}")
         screen.addstr(y_begin + 2, 1, f"Place Score {'Time'.rjust(5)}")
         for i in range(len(results)):
-            screen.addstr(y_begin + i + 3, 1, f"{str(i + 1).rjust(5)} "
-                                              f"{str(results[i][0]).rjust(5)} "
-                                              f"{'%.2f' % results[i][1]}")
+            screen.addstr(y_begin + i + 3, 1,
+                          f"{str(i + 1).rjust(5)} "
+                          f"{str(results[i][0]).rjust(5)} "
+                          f"{'%.2f' % results[i][1]}")
         screen.addstr(y_begin + len(results) + 5, 1, 'Press any key or click '
                                                      'to exit to menu')
         screen.refresh()
@@ -87,7 +89,7 @@ class Interface:
         лягушка"""
         self.draw_border()
         self.draw_an_object(0, 3, f'Score: {score}, Lives: {round(lives)},'
-                                  f' Level: {level_index}')
+                            f' Level: {level_index}')
         for ex in self.level.exits:
             self.draw_an_object(ex[0], ex[1], '#')
         for ent in self.level.enters:

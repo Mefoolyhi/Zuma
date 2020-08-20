@@ -8,7 +8,6 @@ import copy
 import json
 import os
 import level_parser
-import curses
 
 
 class TestAlgorithms(unittest.TestCase):
@@ -196,19 +195,13 @@ class TestGameLogic(unittest.TestCase):
                                                   next_ball, enters, exits)
         self.assertEqual(
             [core_classes.Ball(9, 9), core_classes.Ball(8, 8, 1),
-            core_classes.Ball(7, 7), core_classes.Ball(6, 6, 2),
-            core_classes.Ball(5, 5, 3), core_classes.Ball(5, 4, 4)],
+             core_classes.Ball(7, 7), core_classes.Ball(6, 6, 2),
+             core_classes.Ball(5, 5, 3), core_classes.Ball(5, 4, 4)],
             line[2])
         self.assertEqual(2, root)
         self.assertEqual(0, index)
 
-    def test_count_score(self):
-        curses.wrapper(self.check_score_counting)
-
-    def check_score_counting(self, screen):
-        curses.use_default_colors()
-        for i in range(4):
-            curses.init_pair(i + 1, i + 8, -1)
+    def test_check_score_counting(self):
         ball_on_map = [[core_classes.Ball(5, 5, 1), core_classes.Ball(5, 6, 1),
                         core_classes.Ball(5, 7, 2),
                         core_classes.Ball(5, 8, 3)],
