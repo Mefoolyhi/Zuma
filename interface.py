@@ -49,7 +49,8 @@ class Interface:
                           f"{str(i + 1).rjust(5)} "
                           f"{str(results[i][0]).rjust(5)} "
                           f"{'%.2f' % results[i][1]}")
-        screen.addstr(y_begin + len(results) + 5, 1, 'Press any key or click '
+        screen.addstr(y_begin + len(results) + 5, 1, 'Press any key or '
+                                                     'click '
                                                      'to exit to menu')
         screen.refresh()
 
@@ -89,7 +90,7 @@ class Interface:
         лягушка"""
         self.draw_border()
         self.draw_an_object(0, 3, f'Score: {score}, Lives: {round(lives)},'
-                            f' Level: {level_index}')
+                                  f' Level: {level_index}')
         for ex in self.level.exits:
             self.draw_an_object(ex[0], ex[1], '#')
         for ent in self.level.enters:
