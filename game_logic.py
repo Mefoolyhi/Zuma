@@ -1,6 +1,5 @@
 import core_classes
 import time
-from interface import Interface
 from random import randint
 import json
 import copy
@@ -12,6 +11,7 @@ class GameLogic:
 
     @staticmethod
     def find_levels():
+        """Ищет уровни"""
         levels = glob.glob('*level.txt')
         if not levels:
             raise ValueError("We don't have any levels")
@@ -57,6 +57,7 @@ class GameLogic:
 
     @staticmethod
     def count_scores(balls_on_map, root_index, ball_position):
+        """Считает очки"""
         if root_index is None or ball_position is None:
             return 0
         line = balls_on_map[root_index]
@@ -86,13 +87,13 @@ class GameLogic:
         flying_balls = []
         balls_on_map = []
         indexes = [0] * len(level.enters)
+
+        next_ball_in_root_with_speed = []
         for i in range(len(level.exits)):
             color = randint(1, level.color_number)
             balls_on_map.append([core_classes.Ball(level.enters[i][1],
                                                    level.enters[i][0],
                                                    color)])
-        next_ball_in_root_with_speed = []
-        for i in range(len(level.enters)):
             next_ball_in_root_with_speed.append(level.roots[i][0])
         dead_balls_count = [0] * len(level.roots)
         putted_balls = [0] * len(level.roots)
@@ -122,8 +123,7 @@ class GameLogic:
                         continue
                     else:
                         line.pop(0)
-                    flying_balls[i].x = line[0][1]
-                    flying_balls[i].y = line[0][0]
+                    flying_balls[i].set_x_y(line[0][1], line[0][0])
                     root, index = GameLogic.handle_embedding(
                         balls_on_map,
                         flying_balls[i],
@@ -137,20 +137,23 @@ class GameLogic:
                             balls_on_map, root, index)
                         putted_balls[root] += 1
                         graphics.draw_roots()
-                        graphics.draw_balls_in_root(balls_on_map[root])
+                        for rout in balls_on_map:
+                            graphics.draw_balls_in_root(rout)
                         lines.pop(i)
                         flying_balls.pop(i)
                         if index == 0:
                             next_ball_in_root_with_speed[root] = \
                                 GameLogic.set_next_ball_with_speed(
-                                    indexes[i],
-                                    len(level.roots[i]),
-                                    level.roots[i],
-                                    level.exits[i]
+                                    indexes[root],
+                                    len(level.roots[root]),
+                                    level.roots[root],
+                                    level.exits[root]
                                 )
-                            indexes[i] = min(indexes[i] + 1,
-                                             len(level.roots[i]) + 1)
+                            indexes[root] = min(indexes[root] + 1,
+                                                len(level.roots[root]) + 1)
                         score += score_delta
+                        if len(balls_on_map[root]) == 0:
+                            indexes[root] = len(level.roots[root])
                         if score_delta > 0:
                             dead_balls_count[root] += score_delta // 10
             if ticker % (level.speed * speed_segment * 2) == 0:
@@ -162,22 +165,15 @@ class GameLogic:
                         continue
                     graphics.draw_an_object(balls_on_map[i][-1].y,
                                             balls_on_map[i][-1].x, "-")
-                    balls_on_map[i][0].x = next_ball_in_root_with_speed[
-                        i][1]
-                    balls_on_map[i][0].y = next_ball_in_root_with_speed[
-                        i][0]
                     speed_segment = next_ball_in_root_with_speed[i][2]
-                    next_ball_in_root_with_speed[i] = \
-                        GameLogic.set_next_ball_with_speed(
+                    next_ball_in_root_with_speed[i], indexes[i] = \
+                        GameLogic.move_balls_get_next_position(
+                            balls_on_map[i],
+                            next_ball_in_root_with_speed[i],
                             indexes[i],
-                            len(level.roots[i]),
                             level.roots[i],
-                            (*level.exits[i], 10)
-                        )
-                    indexes[i] = min(indexes[i] + 1, len(level.roots[i]) + 1)
-                    GameLogic.move_balls_except_first(level.roots[i],
-                                                      n, balls_on_map[i],
-                                                      indexes[i])
+                            level.exits[i],
+                            level.enters[i])
                     if indexes[i] > len(level.roots[i]):
                         lives -= level.percentage / 100
                         dead_balls_count[i] += 1
@@ -193,13 +189,10 @@ class GameLogic:
 
                     if (n + dead_balls_count[i] - putted_balls[i] <
                             level._balls_in_root):
-                        balls_on_map[i].append(
-                            core_classes.Ball(
-                                level.enters[i][1],
-                                level.enters[i][0],
-                                randint(1, level.color_number)))
+                        GameLogic.add_new_ball(balls_on_map[i],
+                                               level.enters[i],
+                                               level.color_number)
                     graphics.draw_balls_in_root(balls_on_map[i])
-
                 if is_dying or sum(map(len, balls_on_map)) == 0:
                     end = time.perf_counter()
                     break
@@ -207,23 +200,51 @@ class GameLogic:
         return score, lives, end - begin
 
     @staticmethod
-    def move_balls_except_first(rout, n, balls_on_map, index):
+    def add_new_ball(balls_on_map, enter, color_number):
+        """Метод добавляет новый шар в маршрут"""
+        balls_on_map.append(core_classes.Ball(enter[1], enter[0],
+                                              randint(1, color_number)))
+
+    @staticmethod
+    def move_balls_get_next_position(balls_on_map, next_position, index,
+                                     root, exit, enter):
+        """Обновляет позицию всех шаров"""
+        balls_on_map[0].set_x_y(next_position[1], next_position[0])
+        next = GameLogic.set_next_ball_with_speed(index, len(root), root,
+                                                  (*exit, 10))
+        index = min(index + 1, len(root) + 1)
+        GameLogic.move_balls_except_first(root,
+                                          len(balls_on_map), balls_on_map,
+                                          index, enter, exit)
+        return next, index
+
+    @staticmethod
+    def move_balls_except_first(rout, n, balls_on_map, index, enter, exit):
+        """Обновляет позицию всех шаров, кроме первого"""
         for j in range(1, n):
-            balls_on_map[j].x = rout[index - 1 - j][1]
-            balls_on_map[j].y = rout[index - 1 - j][0]
+            k = index - 1 - j
+            if k > len(rout):
+                balls_on_map[j].set_x_y(exit[1], exit[0])
+            elif k < 0:
+                balls_on_map[j].set_x_y(enter[1], enter[0])
+            else:
+                balls_on_map[j].set_x_y(rout[k][1], rout[k][0])
 
     @staticmethod
     def set_next_ball_with_speed(index, n, rout, default):
+        """Сдвигает указатель на первую позицию шара в маршруте,
+        если указатель выходит за границу маршрута, выставляет значение
+        default"""
         index += 1
         if index < n:
             return rout[index]
         return default
 
     @staticmethod
-    def choose_level(screen, levels):
+    def choose_level(screen, levels, printingmethod):
         """Метод обеспечивает работу меню"""
         levels_count = len(levels)
-        pair = Interface.print_levels(screen, levels_count)
+        pair = printingmethod(screen, levels_count)
         if pair:
             x, y = pair
             if 0 < y <= levels_count and 0 <= x <= 10:

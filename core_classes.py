@@ -8,7 +8,6 @@ import json
 
 class Level:
     """Класс уровня"""
-
     def __init__(self, frog_right_up_corner=(0, 0), enters=None, exits=None,
                  color_number=0,
                  roots=None, balls_number=0, field_height=0,
@@ -34,6 +33,7 @@ class Level:
         self._balls_in_root = 0
 
     def end_creating_level(self):
+        """Валидация корректности заданного уровня"""
         try:
             self._balls_in_root = self.balls_number // len(self.enters)
             if len(self.frog_right_up_corner) != 2:
@@ -83,6 +83,7 @@ class Level:
 
     @staticmethod
     def get_level(filename):
+        """Получение уровня из файла"""
         if not os.path.isfile(filename):
             raise RuntimeError("Level do not exist")
         with open(filename, 'r') as f:
@@ -99,6 +100,7 @@ class Level:
 
     @staticmethod
     def put_level(index, level):
+        """Загрузка уровня в файл"""
         filename = f"{index}level.txt"
         if os.path.isfile(filename):
             os.remove(filename)
@@ -110,7 +112,6 @@ class Level:
 
 class Ball:
     """Класс шара"""
-
     def __init__(self, x, y, color_number=0):
         self.x = x
         self.y = y
@@ -135,7 +136,6 @@ class Ball:
 
 class Frog:
     """Класс стреляющей лягушки"""
-
     def __init__(self, x, y, color_number):
         self.right_up_corner = (x, y)
         self.shooting_point = Ball(x + 1, y, randint(1, color_number))
@@ -178,7 +178,7 @@ class HighScoreTable:
 
     @staticmethod
     def get(filename):
-        """Метод возвращает таблицу результатов"""
+        """Метод возвращает таблицу результатов из файла"""
         if os.path.isfile(filename):
             with open(filename, 'r') as f:
                 results = json.load(f)

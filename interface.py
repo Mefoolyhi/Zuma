@@ -19,7 +19,21 @@ class Interface:
         curses.use_default_colors()
 
     @staticmethod
-    def print_levels(screen, levels_count):
+    def print_only_levels(screen, levels_count):
+        """Отображает только список уровней для меню таблицы результатов"""
+        screen.addstr(0, 1, "Choose the level by mouse clicking to see its "
+                            "highscore table")
+        for i in range(levels_count):
+            screen.addstr(i + 1, 1, f"Level {i + 1}")
+        screen.addstr(levels_count + 1, 1, "Random Level")
+        screen.refresh()
+        key = screen.getch()
+        if key == curses.KEY_MOUSE:
+            _, x, y, _, _ = curses.getmouse()
+            return x, y
+
+    @staticmethod
+    def print_menu(screen, levels_count):
         """Отображение меню"""
         screen.addstr(0, 1, "Choose the menu item by mouse clicking")
         for i in range(levels_count):
@@ -41,18 +55,19 @@ class Interface:
         screen.refresh()
 
     @staticmethod
-    def draw_high_score_table_level(screen, results, index, y_begin):
+    def draw_high_score_table_level(screen, results, index):
         """Отображение таблицы лучших результатов"""
-        screen.addstr(y_begin, 1, f"High Score Table Level {index}")
-        screen.addstr(y_begin + 2, 1, f"Place Score {'Time'.rjust(5)}")
+        Interface.clean_screen(screen)
+        screen.addstr(0, 1, f"High Score Table Level {index}")
+        screen.addstr(1, 1, f"Place Score {'Time'.rjust(5)}")
         for i in range(len(results)):
-            screen.addstr(y_begin + i + 3, 1,
+            screen.addstr(i + 2, 1,
                           f"{str(i + 1).rjust(5)} "
                           f"{str(results[i][0]).rjust(5)} "
                           f"{'%.2f' % results[i][1]}")
-        screen.addstr(y_begin + len(results) + 5, 1, 'Press any key or '
-                                                     'click '
-                                                     'to exit to menu')
+        screen.addstr(len(results) + 3, 1, 'Press any key or '
+                                           'click '
+                                           'to exit to menu')
         screen.refresh()
 
     def print_results(self, score, time):
@@ -66,6 +81,7 @@ class Interface:
 
     @staticmethod
     def wait_for_reaction(screen):
+        """Ждет пока что-то нажмут"""
         key = screen.getch()
         while key < 0:
             key = screen.getch()
@@ -79,6 +95,7 @@ class Interface:
         Interface.wait_for_reaction(self.win)
 
     def wait(self, time_in_millisec):
+        """Просто ждет"""
         self.win.timeout(time_in_millisec)
 
     def init_win(self):
@@ -99,6 +116,7 @@ class Interface:
         self.draw_a_frog()
 
     def draw_border(self):
+        """Рисует границы"""
         for i in range(self.level.field_height - 1):
             self.draw_an_object(i, 0, '|')
             self.draw_an_object(i, self.level.field_width - 1, '|')
@@ -114,9 +132,11 @@ class Interface:
                 self.draw_an_object(cell[0], cell[1], '-')
 
     def draw_an_object(self, y, x, text):
+        """Рисует любой объект"""
         self.win.addstr(y, x, text)
 
     def draw_ball(self, ball):
+        """Рисует шар"""
         self.win.addstr(ball.y, ball.x, '*',
                         curses.color_pair(ball.color_number))
 
@@ -160,5 +180,6 @@ class Interface:
         Interface.clean_screen(self.win)
 
     def draw_balls_in_root(self, balls_on_map):
+        """Рисует все шары, которые есть на поле на данной маршруте"""
         for ball in balls_on_map:
             self.draw_ball(ball)

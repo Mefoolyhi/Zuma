@@ -13,27 +13,27 @@ def main(screen):
     Interface.init_curses()
     levels_path = GameLogic.find_levels()
     while True:
-        pair = GameLogic.choose_level(screen, levels_path)
+        pair = GameLogic.choose_level(screen, levels_path,
+                                      Interface.print_menu)
         if pair:
             i = pair[0]
             if i == -2:
                 Interface.clean_screen(screen)
-                #магазин
+                # магазин
                 break
             if i == -1:
                 Interface.clean_screen(screen)
-                index_begin = 0
-                for j in range(len(levels_path)):
-                    current_highscoretable = HighScoreTable.get(
-                        f'{scores_files}{j + 1}.json')
-                    if current_highscoretable:
-                        Interface.draw_high_score_table_level(
-                            screen,
-                            current_highscoretable.results,
-                            j + 1,
-                            index_begin)
-                        index_begin += len(current_highscoretable.results) + 6
-                Interface.wait_for_reaction(screen)
+                pair2 = GameLogic.choose_level(screen, levels_path,
+                                               Interface.print_only_levels)
+                if pair2:
+                    i = pair2[0]
+                    if i > 0:
+                        table = HighScoreTable.get(
+                            f'{scores_files}{i}.json')
+                        Interface.draw_high_score_table_level(screen,
+                                                              table.results,
+                                                              i)
+                        Interface.wait_for_reaction(screen)
                 continue
             level = pair[1]
             Interface.clean_screen(screen)
