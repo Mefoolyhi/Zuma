@@ -26,7 +26,8 @@ class Interface:
             screen.addstr(i + 1, 1, f"Level {i + 1}")
         screen.addstr(levels_count + 1, 1, "Random Level")
         screen.addstr(levels_count + 2, 1, "See high score table")
-        screen.addstr(levels_count + 3, 1, "Exit")
+        screen.addstr(levels_count + 3, 1, "Shop")
+        screen.addstr(levels_count + 4, 1, "Exit")
         screen.refresh()
         key = screen.getch()
         if key == curses.KEY_MOUSE:
@@ -143,8 +144,9 @@ class Interface:
             _, x, y, _, _ = curses.getmouse()
             line = self.level._frog.shoot(x, y, (self.level.field_height,
                                                  self.level.field_width))[:-1]
-            self.next_ball()
-            return line
+            return "shoot", line
+        if key == 115:
+            return "save"
 
     def next_ball(self):
         """Обновление цветов после выстрела"""
@@ -157,6 +159,6 @@ class Interface:
         """Чистит и стирает основной игровой экран"""
         Interface.clean_screen(self.win)
 
-    def draw_balls_in_root(self, index):
-        for ball in self.level._balls_on_map[index]:
+    def draw_balls_in_root(self, balls_on_map):
+        for ball in balls_on_map:
             self.draw_ball(ball)

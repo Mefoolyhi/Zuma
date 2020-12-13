@@ -130,69 +130,62 @@ class TestGameLogic(unittest.TestCase):
 
     def test_embedding(self):
         """Проверка метода game_logic.handle_embedding"""
-        line = [[core_classes.Ball(5, 7), core_classes.Ball(5, 6),
-                 core_classes.Ball(5, 5)],
-                [core_classes.Ball(3, 4), core_classes.Ball(3, 3),
-                 core_classes.Ball(3, 2), core_classes.Ball(3, 1)],
-                [core_classes.Ball(9, 9, 1), core_classes.Ball(8, 8, 2),
-                 core_classes.Ball(7, 7, 3), core_classes.Ball(6, 6, 4)]]
+        line = [[core_classes.Ball(5, 6), core_classes.Ball(5, 7),
+                 core_classes.Ball(5, 8)],
+                [core_classes.Ball(3, 1), core_classes.Ball(3, 2),
+                 core_classes.Ball(3, 3), core_classes.Ball(3, 4)],
+                [core_classes.Ball(7, 7, 2),
+                 core_classes.Ball(8, 8, 3), core_classes.Ball(9, 9, 4)]]
         old_line = copy.deepcopy(line)
-        last_ball = [core_classes.Ball(5, 4), core_classes.Ball(3, 0),
-                     core_classes.Ball(5, 5)]
-        enters = [(0, 5), (0, 3), (0, 0)]
-        exits = [(10, 5), (10, 3), (10, 10)]
-        next_ball = [(8, 5, 10), (10, 3, 10), (10, 10, 10)]
-        ball_beggining = core_classes.Ball(5, 8)
-        ball_end = core_classes.Ball(3, 0)
+        enters = [(9, 5), (6, 3), (12, 12)]
+        exits = [(4, 5), (0, 2), (6, 6)]
+        indexes = [3, 5, 5]
+        roots = [[(8, 5), (7, 5), (6, 5), (5, 5)],
+                 [(5, 3), (4, 3), (3, 3), (2, 3), (1, 3), (0, 3)],
+                 [(11, 11), (10, 10), (9, 9), (8, 8), (7, 7)]]
+        ball_first = core_classes.Ball(5, 5)
+        ball_last = core_classes.Ball(3, 5)
         ball_center = core_classes.Ball(8, 8)
-        ball_first = core_classes.Ball(9, 9)
-        ball_last = core_classes.Ball(3, 0)
+        ball_beggining = core_classes.Ball(5, 4)
+        ball_end = core_classes.Ball(3, 6)
         ball_no_root = core_classes.Ball(1, 1)
         root, index = GameLogic.handle_embedding(line, ball_no_root,
-                                                 last_ball, next_ball,
-                                                 enters, exits)
+                                                 indexes, roots, enters, exits)
         self.assertEqual(old_line, line)
         self.assertEqual(None, root)
         self.assertEqual(None, index)
+        root, index = GameLogic.handle_embedding(line, ball_first,
+                                                 indexes, roots, enters, exits)
+        old_line[0].insert(0, ball_first)
+        self.assertEqual(old_line, line)
+        self.assertEqual(0, root)
+        self.assertEqual(0, index)
+        indexes[0] += 1
         root, index = GameLogic.handle_embedding(line, ball_beggining,
-                                                 last_ball, next_ball,
-                                                 enters, exits)
+                                                 indexes, roots, enters, exits)
         old_line[0].insert(0, ball_beggining)
         self.assertEqual(old_line, line)
         self.assertEqual(0, root)
         self.assertEqual(0, index)
-        root, index = GameLogic.handle_embedding(line, ball_end, last_ball,
-                                                 next_ball, enters, exits)
+        root, index = GameLogic.handle_embedding(line, ball_last,
+                                                 indexes, roots, enters, exits)
+        old_line[1].append(ball_last)
+        self.assertEqual(old_line, line)
+        self.assertEqual(1, root)
+        self.assertEqual(4, index)
+        root, index = GameLogic.handle_embedding(line, ball_end,
+                                                 indexes, roots, enters, exits)
         old_line[1].append(ball_end)
         self.assertEqual(old_line, line)
         self.assertEqual(1, root)
-        self.assertEqual(4, index)
-        last_ball[1] = core_classes.Ball(2, 9)
-        old_line[1].append(core_classes.Ball(2, 9))
-        root, index = GameLogic.handle_embedding(line, ball_last, last_ball,
-                                                 next_ball, enters, exits)
-        self.assertEqual(old_line, line)
-        self.assertEqual(1, root)
-        self.assertEqual(4, index)
+        self.assertEqual(5, index)
         root, index = GameLogic.handle_embedding(line, ball_center,
-                                                 last_ball,
-                                                 next_ball, enters, exits)
-        self.assertEqual(
-            [core_classes.Ball(9, 9, 1), core_classes.Ball(8, 8),
-             core_classes.Ball(7, 7, 2), core_classes.Ball(6, 6, 3),
-             core_classes.Ball(5, 5, 4)], line[2])
+                                                 indexes, roots, enters, exits)
+        old_line[2].append(core_classes.Ball(10, 10, 4))
+        self.assertEqual(old_line, line)
+        self.assertEqual(4, line[2][-1].color_number)
         self.assertEqual(2, root)
         self.assertEqual(1, index)
-        last_ball[2] = core_classes.Ball(5, 4)
-        root, index = GameLogic.handle_embedding(line, ball_first, last_ball,
-                                                 next_ball, enters, exits)
-        self.assertEqual(
-            [core_classes.Ball(9, 9), core_classes.Ball(8, 8, 1),
-             core_classes.Ball(7, 7), core_classes.Ball(6, 6, 2),
-             core_classes.Ball(5, 5, 3), core_classes.Ball(5, 4, 4)],
-            line[2])
-        self.assertEqual(2, root)
-        self.assertEqual(0, index)
 
     def test_check_score_counting(self):
         ball_on_map = [[core_classes.Ball(5, 5, 1), core_classes.Ball(5, 6, 1),

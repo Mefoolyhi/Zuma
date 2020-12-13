@@ -16,8 +16,9 @@ def main(screen):
         pair = GameLogic.choose_level(screen, levels_path)
         if pair:
             i = pair[0]
-            if i == 0:
+            if i == -2:
                 Interface.clean_screen(screen)
+                #магазин
                 break
             if i == -1:
                 Interface.clean_screen(screen)

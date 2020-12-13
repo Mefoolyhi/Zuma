@@ -31,13 +31,10 @@ class Level:
         self.frog_right_up_corner = frog_right_up_corner
         self.speed = speed
         self._frog = None
-        self._balls_on_map = []
-        self._iters = []
         self._balls_in_root = 0
 
     def end_creating_level(self):
         try:
-            self._iters = [iter(root) for root in self.roots]
             self._balls_in_root = self.balls_number // len(self.enters)
             if len(self.frog_right_up_corner) != 2:
                 raise ValueError("Ошибка в задании лягушки")
@@ -49,10 +46,6 @@ class Level:
             for i in range(len(self.enters)):
                 if len(self.enters[i]) != 2 or len(self.exits[i]) != 2:
                     raise ValueError("Ошибка в координатах входов и выходов")
-                color = randint(1, self.color_number)
-                self._balls_on_map.append([Ball(self.enters[i][1],
-                                                self.enters[i][0],
-                                                color)])
                 for j in range(len(self.roots[i])):
                     if len(self.roots[i][j]) != 3:
                         raise ValueError("Ошибка в задании путей")
@@ -135,6 +128,10 @@ class Ball:
     def __copy__(self):
         return Ball(self.x, self.y, self.color_number)
 
+    def set_x_y(self, x, y):
+        self.x = x
+        self.y = y
+
 
 class Frog:
     """Класс стреляющей лягушки"""
@@ -188,3 +185,10 @@ class HighScoreTable:
         else:
             results = None
         return HighScoreTable(results)
+
+
+class Game:
+    def __init__(self, level):
+        pass
+
+
