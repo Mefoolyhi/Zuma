@@ -4,11 +4,13 @@ import algorithms
 from random import randint
 import os
 import json
+import glob
 
 
 class Level:
     """Класс уровня"""
-    def __init__(self, frog_right_up_corner=(0, 0), enters=None, exits=None,
+    def __init__(self, index, frog_right_up_corner=(0, 0), enters=None,
+                 exits=None,
                  color_number=0,
                  roots=None, balls_number=0, field_height=0,
                  field_width=0, percentage=0, speed=0):
@@ -20,6 +22,7 @@ class Level:
             enters = []
         self.enters = enters
         self.exits = exits
+        self.index = index
         # max - 8, дальше цвета странные какие-то
         self.color_number = color_number
         self.roots = roots
@@ -32,7 +35,7 @@ class Level:
         self._frog = None
         self._balls_in_root = 0
 
-    def end_creating_level(self):
+    def validate_level(self):
         """Валидация корректности заданного уровня"""
         try:
             self._balls_in_root = self.balls_number // len(self.enters)
@@ -82,32 +85,43 @@ class Level:
         return True
 
     @staticmethod
+    def find_levels():
+        """Ищет уровни"""
+        levels = glob.glob('*level.txt')
+        if not levels:
+            raise ValueError("We don't have any levels")
+        return levels
+
+    @staticmethod
     def get_level(filename):
         """Получение уровня из файла"""
         if not os.path.isfile(filename):
             raise RuntimeError("Level do not exist")
+        try:
+            index = int(filename[0])
+        except ValueError as e:
+            raise ValueError("Invalid filename", e)
         with open(filename, 'r') as f:
             data = f.readlines()
-        level = Level()
+        level = Level(index)
         for line in data:
             attr, str_value = line.split(":")
             attr = attr[1:-1]
             str_value = str_value[1:-2]
             value = json.loads(str_value)
             setattr(level, attr, value)
-        level.end_creating_level()
+        level.validate_level()
         return level
 
-    @staticmethod
-    def put_level(index, level):
+    def put_level(self):
         """Загрузка уровня в файл"""
-        filename = f"{index}level.txt"
+        filename = f"{self.index}level.txt"
         if os.path.isfile(filename):
             os.remove(filename)
         with open(filename, "a") as f:
-            for attr in level.__dict__.keys():
+            for attr in self.__dict__.keys():
                 if not attr.startswith('_'):
-                    f.write(f'"{attr}": {json.dumps(getattr(level, attr))},\n')
+                    f.write(f'"{attr}": {json.dumps(getattr(self, attr))},\n')
 
 
 class Ball:
@@ -186,9 +200,25 @@ class HighScoreTable:
             results = None
         return HighScoreTable(results)
 
-
-class Game:
-    def __init__(self, level):
-        pass
-
-
+    @staticmethod
+    def save_results(score, filename, level_time, level_index):
+        """Метод сохраняет лучшие 9 результатов для каждого уровня"""
+        file = f'{filename}{level_index}.json'
+        results = HighScoreTable.get(file).results
+        if results:
+            current_result = [score, level_time]
+            n = len(results)
+            for i in range(n):
+                if (results[i][0] == current_result[0] and
+                        results[i][1] > current_result[1]):
+                    results.insert(i, current_result)
+                    break
+                elif results[i][0] < current_result[0]:
+                    results.insert(i, current_result)
+                    break
+            if len(results) == n:
+                results.append(current_result)
+        else:
+            results = [[score, level_time]]
+        with open(file, 'w') as f:
+            json.dump(results[:8 + 1], f)

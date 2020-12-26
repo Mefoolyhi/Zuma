@@ -1,7 +1,8 @@
 """Модуль тестирования"""
 
 import unittest
-from game_logic import GameLogic
+from unittest.mock import patch
+from game import Game
 import core_classes
 import algorithms
 import copy
@@ -104,7 +105,7 @@ class TestGameLogic(unittest.TestCase):
         filename = 'testscore'
         level_index = 1
         scores_and_times = [(4, 4), (10, 1), (9, 4), (9, 7), (8, 3)]
-        GameLogic.save_results(1, filename, 1, level_index)
+        core_classes.HighScoreTable.save_results(1, filename, 1, level_index)
         with open(f'{filename}{level_index}.json',
                   'r') as f:
             new_results = json.load(f)
@@ -114,7 +115,8 @@ class TestGameLogic(unittest.TestCase):
             with open(f'{filename}{level_index}.json',
                       'w') as f:
                 json.dump(results, f)
-            GameLogic.save_results(score, filename, time, level_index)
+            core_classes.HighScoreTable.save_results(score, filename, time,
+                                                     level_index)
             with open(f'{filename}{level_index}.json',
                       'r') as f:
                 new_results = json.load(f)
@@ -128,6 +130,15 @@ class TestGameLogic(unittest.TestCase):
                 prev_res = result
         os.remove(f'{filename}{level_index}.json')
 
+    @staticmethod
+    def validate(*args):
+        pass
+
+    class DummyFrog:
+        shoot_balls = [0, 0]
+
+    @patch('core_classes.Level.validate_level', validate)
+    @patch('core_classes.Frog', DummyFrog)
     def test_embedding(self):
         """Проверка метода game_logic.handle_embedding"""
         line = [[core_classes.Ball(5, 6), core_classes.Ball(5, 7),
@@ -149,44 +160,42 @@ class TestGameLogic(unittest.TestCase):
         ball_beggining = core_classes.Ball(5, 4)
         ball_end = core_classes.Ball(3, 6)
         ball_no_root = core_classes.Ball(1, 1)
-        root, index = GameLogic.handle_embedding(line, ball_no_root,
-                                                 indexes, roots, enters, exits)
+        game = Game(core_classes.Level(0, enters=enters, exits=exits,
+                                       roots=roots), lines=line)
+        self.assertEqual(indexes, game.indexes)
+        root, index = game.handle_embedding(ball_no_root)
         self.assertEqual(old_line, line)
         self.assertEqual(None, root)
         self.assertEqual(None, index)
-        root, index = GameLogic.handle_embedding(line, ball_first,
-                                                 indexes, roots, enters, exits)
+        root, index = game.handle_embedding(ball_first)
         old_line[0].insert(0, ball_first)
         self.assertEqual(old_line, line)
         self.assertEqual(0, root)
         self.assertEqual(0, index)
         indexes[0] += 1
-        root, index = GameLogic.handle_embedding(line, ball_beggining,
-                                                 indexes, roots, enters, exits)
+        root, index = game.handle_embedding(ball_beggining)
         old_line[0].insert(0, ball_beggining)
         self.assertEqual(old_line, line)
         self.assertEqual(0, root)
         self.assertEqual(0, index)
-        root, index = GameLogic.handle_embedding(line, ball_last,
-                                                 indexes, roots, enters, exits)
+        root, index = game.handle_embedding(ball_last)
         old_line[1].append(ball_last)
         self.assertEqual(old_line, line)
         self.assertEqual(1, root)
         self.assertEqual(4, index)
-        root, index = GameLogic.handle_embedding(line, ball_end,
-                                                 indexes, roots, enters, exits)
+        root, index = game.handle_embedding(ball_end)
         old_line[1].append(ball_end)
         self.assertEqual(old_line, line)
         self.assertEqual(1, root)
         self.assertEqual(5, index)
-        root, index = GameLogic.handle_embedding(line, ball_center,
-                                                 indexes, roots, enters, exits)
+        root, index = game.handle_embedding(ball_center)
         old_line[2].append(core_classes.Ball(10, 10, 4))
         self.assertEqual(old_line, line)
         self.assertEqual(4, line[2][-1].color_number)
         self.assertEqual(2, root)
         self.assertEqual(1, index)
 
+    @patch('core_classes.Level.validate_level', validate)
     def test_check_score_counting(self):
         ball_on_map = [[core_classes.Ball(5, 5, 1), core_classes.Ball(5, 6, 1),
                         core_classes.Ball(5, 7, 2),
@@ -201,17 +210,19 @@ class TestGameLogic(unittest.TestCase):
                         core_classes.Ball(9, 9, 4)]]
         old_balls = ball_on_map.copy()
         score = 0
-        score += GameLogic.count_scores(ball_on_map, 0, 0)
+        game = Game(core_classes.Level(0), balls=ball_on_map)
+
+        score += game.count_scores(0, 0)
         self.assertEqual(0, score)
         self.assertEqual(old_balls, ball_on_map)
-        score += GameLogic.count_scores(ball_on_map, 0, 2)
+        score += game.count_scores(0, 2)
         self.assertEqual(0, score)
         self.assertEqual(old_balls, ball_on_map)
-        score += GameLogic.count_scores(ball_on_map, 1, 0)
+        score += game.count_scores(1, 0)
         self.assertEqual(40, score)
         old_balls[1] = [core_classes.Ball(3, 4, 4)]
         self.assertEqual(old_balls, ball_on_map)
-        score += GameLogic.count_scores(ball_on_map, 2, 4)
+        score += game.count_scores(2, 4)
         self.assertEqual(70, score)
         old_balls[2] = [core_classes.Ball(5, 4, 1), core_classes.Ball(5, 5, 1),
                         core_classes.Ball(9, 9, 4)]
@@ -219,51 +230,69 @@ class TestGameLogic(unittest.TestCase):
 
 
 class TestParser(unittest.TestCase):
-    def test_parser(self):
-        level1 = core_classes.Level((18, 10), [(10, 1)], [(10, 38)], 3,
-                                    [[(9, 1, 5), (8, 1, 5), (7, 1, 5),
-                                      (6, 1, 5), (5, 1, 5), (5, 2, 5),
-                                      (5, 3, 5), (5, 4, 5), (5, 5, 5),
-                                      (5, 6, 7), (5, 7, 7), (5, 8, 7),
-                                      (5, 9, 7), (5, 10, 7), (5, 11, 7),
-                                      (5, 12, 7), (5, 13, 7), (5, 14, 7),
-                                      (5, 15, 5), (5, 16, 5), (5, 17, 5),
-                                      (5, 18, 5), (5, 19, 5), (5, 20, 5),
-                                      (5, 21, 7), (5, 22, 7), (5, 23, 7),
-                                      (5, 24, 7), (5, 25, 7), (5, 26, 7),
-                                      (5, 27, 7), (5, 28, 7), (5, 29, 7),
-                                      (5, 30, 5), (5, 31, 5), (5, 32, 5),
-                                      (5, 33, 5), (5, 34, 5), (5, 35, 5),
-                                      (5, 36, 5), (5, 37, 5), (5, 38, 5),
-                                      (6, 38, 5), (7, 38, 5), (8, 38, 5),
-                                      (9, 38, 5)]],
-                                    10, 12, 40, 25, 150)
-        level1.end_creating_level()
-        core_classes.Level.put_level(1, level1)
-        level2 = core_classes.Level((18, 10), [(10, 1)], [(10, 38)], 5,
-                                    [[(9, 1, 5), (8, 1, 5), (7, 1, 5),
-                                      (6, 1, 5), (5, 1, 5), (5, 2, 5),
-                                      (5, 3, 5), (5, 4, 5), (5, 5, 5),
-                                      (5, 6, 7), (5, 7, 7), (5, 8, 7),
-                                      (5, 9, 7), (5, 10, 7), (5, 11, 7),
-                                      (5, 12, 7), (5, 13, 7), (5, 14, 7),
-                                      (5, 15, 5), (5, 16, 5), (5, 17, 5),
-                                      (5, 18, 5), (5, 19, 5), (5, 20, 5),
-                                      (5, 21, 7), (5, 22, 7), (5, 23, 7),
-                                      (5, 24, 7), (5, 25, 7), (5, 26, 7),
-                                      (5, 27, 7), (5, 28, 7), (5, 29, 7),
-                                      (5, 30, 10), (5, 31, 10), (5, 32, 10),
-                                      (5, 33, 10), (5, 34, 10), (5, 35, 10),
-                                      (5, 36, 10), (5, 37, 10), (5, 38, 10),
-                                      (6, 38, 10), (7, 38, 10), (8, 38, 10),
-                                      (9, 38, 10)]],
-                                    5, 12, 40, 33.3, 100)
-        level2.end_creating_level()
-        core_classes.Level.put_level(2, level2)
+    level1 = core_classes.Level(1, (18, 10), [(10, 1)], [(10, 38)], 3,
+                                [[(9, 1, 5), (8, 1, 5), (7, 1, 5),
+                                  (6, 1, 5), (5, 1, 5), (5, 2, 5),
+                                  (5, 3, 5), (5, 4, 5), (5, 5, 5),
+                                  (5, 6, 7), (5, 7, 7), (5, 8, 7),
+                                  (5, 9, 7), (5, 10, 7), (5, 11, 7),
+                                  (5, 12, 7), (5, 13, 7), (5, 14, 7),
+                                  (5, 15, 5), (5, 16, 5), (5, 17, 5),
+                                  (5, 18, 5), (5, 19, 5), (5, 20, 5),
+                                  (5, 21, 7), (5, 22, 7), (5, 23, 7),
+                                  (5, 24, 7), (5, 25, 7), (5, 26, 7),
+                                  (5, 27, 7), (5, 28, 7), (5, 29, 7),
+                                  (5, 30, 5), (5, 31, 5), (5, 32, 5),
+                                  (5, 33, 5), (5, 34, 5), (5, 35, 5),
+                                  (5, 36, 5), (5, 37, 5), (5, 38, 5),
+                                  (6, 38, 5), (7, 38, 5), (8, 38, 5),
+                                  (9, 38, 5)]],
+                                10, 12, 40, 25, 150)
+    level2 = core_classes.Level(2, (18, 10), [(10, 1)], [(10, 38)], 5,
+                                [[(9, 1, 5), (8, 1, 5), (7, 1, 5),
+                                  (6, 1, 5), (5, 1, 5), (5, 2, 5),
+                                  (5, 3, 5), (5, 4, 5), (5, 5, 5),
+                                  (5, 6, 7), (5, 7, 7), (5, 8, 7),
+                                  (5, 9, 7), (5, 10, 7), (5, 11, 7),
+                                  (5, 12, 7), (5, 13, 7), (5, 14, 7),
+                                  (5, 15, 5), (5, 16, 5), (5, 17, 5),
+                                  (5, 18, 5), (5, 19, 5), (5, 20, 5),
+                                  (5, 21, 7), (5, 22, 7), (5, 23, 7),
+                                  (5, 24, 7), (5, 25, 7), (5, 26, 7),
+                                  (5, 27, 7), (5, 28, 7), (5, 29, 7),
+                                  (5, 30, 10), (5, 31, 10), (5, 32, 10),
+                                  (5, 33, 10), (5, 34, 10), (5, 35, 10),
+                                  (5, 36, 10), (5, 37, 10), (5, 38, 10),
+                                  (6, 38, 10), (7, 38, 10), (8, 38, 10),
+                                  (9, 38, 10)]],
+                                5, 12, 40, 33.3, 100)
+
+    def test_level_parser(self):
+        self.level1.validate_level()
+        core_classes.Level.put_level(self.level1)
+        self.level2.validate_level()
+        core_classes.Level.put_level(self.level2)
         new_level1 = core_classes.Level.get_level("1level.txt")
         new_level2 = core_classes.Level.get_level("2level.txt")
-        self.assertEqual(level1, new_level1)
-        self.assertEqual(level2, new_level2)
+        self.assertEqual(self.level1, new_level1)
+        self.assertEqual(self.level2, new_level2)
+
+    def test_gamestate_parser(self):
+        game1 = Game(self.level1)
+        game2 = Game(self.level2, balls=[[core_classes.Ball(10, 5, 3),
+                                          core_classes.Ball(11, 5, 3),
+                                          core_classes.Ball(10, 5, 3),
+                                          core_classes.Ball(9, 5, 4),
+                                          core_classes.Ball(8, 5, 4)]],
+                     time=9.8011795)
+        game1.validate_gamestate()
+        game2.validate_gamestate()
+        game1.save_game()
+        game2.save_game()
+        new_game1 = Game.get_game('1levelGameState.txt')
+        new_game2 = Game.get_game('2levelGameState.txt')
+        self.assertEqual(game1, new_game1)
+        self.assertEqual(game2, new_game2)
 
 
 if __name__ == '__main__':

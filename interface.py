@@ -87,10 +87,11 @@ class Interface:
             key = screen.getch()
         Interface.clean_screen(screen)
 
-    def game_over(self):
-        """Обработка конца игры"""
-        self.win.addstr(0, 0, 'Sorry, Game Over')
-        self.win.addstr(2, 0, 'Press any key or click to exit')
+    def no_lives(self):
+        """Обработка нулевых жизней"""
+        self.win.addstr(0, 0, 'Sorry, You can\'t play a level, because your '
+                              'lives = 0')
+        self.win.addstr(2, 0, 'Press any key or click')
         self.win.refresh()
         Interface.wait_for_reaction(self.win)
 
