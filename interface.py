@@ -41,7 +41,8 @@ class Interface:
         screen.addstr(levels_count + 1, 1, "Random Level")
         screen.addstr(levels_count + 2, 1, "See high score table")
         screen.addstr(levels_count + 3, 1, "Shop")
-        screen.addstr(levels_count + 4, 1, "Exit")
+        screen.addstr(levels_count + 4, 1, "Upload level")
+        screen.addstr(levels_count + 5, 1, "Exit")
         screen.refresh()
         key = screen.getch()
         if key == curses.KEY_MOUSE:

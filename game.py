@@ -5,10 +5,14 @@ from GameJSONEncoder import MyEncoder
 import json
 import copy
 import os
+import glob
+from datetime import datetime
+import playsound
 
 
 class Game:
     """Содержит основные методы для игры, обеспечивает игровую логику"""
+
     def __init__(self, level, balls=None, flying_balls=None,
                  lines=None, putted_balls=None, dead_balls=None, time=0):
         if level is None:
@@ -27,7 +31,10 @@ class Game:
         self.validate_gamestate()
 
     def __eq__(self, other):
-        pass
+        return (self._level.index == other._level.index and
+                self.balls_on_map == other.balls_on_map and
+                self.time == other.time
+                )
 
     def validate_gamestate(self):
         if self._level._frog and len(self._level._frog.shoot_balls) == 2:
@@ -72,8 +79,8 @@ class Game:
         if self.flying_balls:
             if self.lines and len(self.lines) == len(self.flying_balls):
                 for i in range(len(self.lines)):
-                    if (self.lines[i][0] != self.flying_balls[i].y or
-                            self.lines[i][1] != self.flying_balls[i].x):
+                    if (self.lines[i][0][0] != self.flying_balls[i].y or
+                            self.lines[i][0][1] != self.flying_balls[i].x):
                         raise ValueError("Invalid state")
             else:
                 raise ValueError("Invalid state")
@@ -164,15 +171,21 @@ class Game:
             return count * 10
         return 0
 
-    def process_level(self, score, lives, graphics):
+    def process_level(self, score, lives, graphics,
+                      begin=time.perf_counter()):
         """Метод воспороизводит уровень"""
         if lives == 0:
             graphics.no_lives()
-        begin = time.perf_counter()
         ticker = 0
         speed_segment = 5
+        music = False
         graphics.draw_roots()
         while True:
+            if (datetime.now().strftime("%m/%d/%Y") == '03/21/2021' and
+                    not music):
+                print(datetime.now().date())
+                playsound.playsound('music.mp3', False)
+                music = True
             graphics.wait(self._level.speed)
             ticker += self._level.speed
             graphics.draw_consist_items(score, lives, self._level.index)
@@ -300,6 +313,10 @@ class Game:
 
     def save_game(self):
         """Сохранение текущей партии в файл"""
+        files = glob.glob('?levelGameState.txt')
+        if len(files) > 3:
+            oldest_file = min(files, key=os.path.getctime)
+            os.remove(oldest_file)
         filename = f"{self._level.index}levelGameState.txt"
         if os.path.isfile(filename):
             os.remove(filename)
@@ -310,6 +327,13 @@ class Game:
                             f' '
                             f'{json.dumps(getattr(self, attr), cls=MyEncoder)}'
                             f',\n')
+
+    @staticmethod
+    def parse_ball(d):
+        ball = core_classes.Ball(0, 0)
+        for a, v in d.items():
+            setattr(ball, a, v)
+        return ball
 
     @staticmethod
     def get_game(filename):
@@ -324,10 +348,25 @@ class Game:
             data = f.readlines()
         game = Game(core_classes.Level.get_level(f'{index}level.txt'))
         for line in data:
-            attr, str_value = line.split(":")
+            l = line.split(":")
+            attr = l[0]
+            str_value = ':'.join(l[1:])
             attr = attr[1:-1]
             str_value = str_value[1:-2]
             value = json.loads(str_value)
+            if attr == 'balls_in_frog' or attr == 'flying_balls':
+                l = []
+                for v in value:
+                    l.append(Game.parse_ball(v))
+                value = l
+            if attr == 'balls_on_map':
+                l = []
+                for val in value:
+                    li = []
+                    for v in val:
+                        li.append(Game.parse_ball(v))
+                    l.append(li)
+                value = l
             setattr(game, attr, value)
         game.validate_gamestate()
         return game

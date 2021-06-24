@@ -23,6 +23,10 @@ def choose_menu_option(screen, levels, printingmethod):
             return -1,
         if y == levels_count + 3 and 0 <= x <= 10:
             return -2,
+        if y == levels_count + 4 and 0 <= x <= 25:
+            return -3,
+        if y == levels_count + 5 and 0 <= x <= 10:
+            return -4,
         return None
 
 
@@ -36,34 +40,47 @@ def main(screen):
                                   Interface.print_menu)
         if pair:
             i = pair[0]
+            if i == -4:
+                break
             if i == -2:
                 Interface.clean_screen(screen)
                 # магазин
-                break
-            if i == -1:
+                Interface.wait_for_reaction(screen)
+                continue
+            if i == -1 or i == -3:
                 Interface.clean_screen(screen)
                 pair2 = choose_menu_option(screen, levels_path,
                                            Interface.print_only_levels)
                 if pair2:
-                    i = pair2[0]
-                    if i > 0:
-                        table = HighScoreTable.get(
-                            f'{scores_files}{i}.json')
-                        Interface.draw_high_score_table_level(screen,
-                                                              table.results,
-                                                              i)
-                        Interface.wait_for_reaction(screen)
+                    j = pair2[0]
+                    if j > 0:
+                        if i == -1:
+                            table = HighScoreTable.get(
+                                f'{scores_files}{j}.json')
+                            Interface \
+                                .draw_high_score_table_level(screen,
+                                                             table.results,
+                                                             j)
+                        else:
+                            Interface.clean_screen(screen)
+                            game = Game.get_game(f"{j}levelGameState.txt")
+                            graphics = Interface(game._level, screen)
+                            play(game, score, lives, graphics)
                 continue
             level = pair[1]
             Interface.clean_screen(screen)
             graphics = Interface(level, screen)
             game = Game(level)
-            score, lives, time = game.process_level(score, lives, graphics)
-            graphics.print_results(score, time)
-            HighScoreTable.save_results(score, scores_files, time, i)
-            lives = math.floor(lives)
-            if lives == 0:
-                graphics.no_lives()
+            play(game, score, lives, graphics)
+
+
+def play(game, score, lives, graphics):
+    score, lives, time = game.process_level(score, lives, graphics)
+    graphics.print_results(score, time)
+    HighScoreTable.save_results(score, scores_files, time, game._level.index)
+    lives = math.floor(lives)
+    if lives == 0:
+        graphics.no_lives()
 
 
 if __name__ == "__main__":
